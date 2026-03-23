@@ -4,7 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>3D Модель Кружка</title>
-    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer-effects@1.0.0/dist/model-viewer-effects.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -94,6 +104,10 @@
         button.active {
             box-shadow: 0 0 0 2px white, 0 0 0 4px #ff5500;
         }
+        
+        .effect-active {
+            border: 2px solid #ff5500;
+        }
     </style>
 </head>
 <body>
@@ -122,144 +136,171 @@
         min-camera-orbit="auto auto 2m"
         max-camera-orbit="auto auto 10m"
         style="background-color: #f5f5f5;">
+        <effect-composer id="composer">
+            <outline-effect id="outlineEffect" color="#ff0000" edge-strength="2" pulse-period="0" blend-mode="default"></outline-effect>
+            <pixelate-effect id="pixelEffect" granularity="8" blend-mode="skip"></pixelate-effect>
+        </effect-composer>
     </model-viewer>
 
-    <script>
-        (() => {
-            const mv = document.getElementById('mv');
-            const status = document.getElementById('status');
-            const btnZ = document.getElementById('btnZ');
-            const btnX = document.getElementById('btnX');
-            const btnStop = document.getElementById('btnStop');
-            const btnOutline = document.getElementById('btnOutline');
-            const btnPixel = document.getElementById('btnPixel');
-            
-            let animations = [];
-            let isOutlineActive = false;
-            let isPixelActive = false;
-            
-            function updateStatus(message, isError = false) {
-                status.textContent = message;
-                status.style.background = isError ? 'rgba(255,0,0,0.9)' : 'rgba(0,0,0,0.85)';
-                console.log(message);
+    <script type="module">
+        import { EffectComposer, OutlineEffect, PixelateEffect } from 'https://cdn.jsdelivr.net/npm/@google/model-viewer-effects@1.0.0/dist/model-viewer-effects.js';
+        
+        const mv = document.getElementById('mv');
+        const status = document.getElementById('status');
+        const btnZ = document.getElementById('btnZ');
+        const btnX = document.getElementById('btnX');
+        const btnStop = document.getElementById('btnStop');
+        const btnOutline = document.getElementById('btnOutline');
+        const btnPixel = document.getElementById('btnPixel');
+        
+        let animations = [];
+        let outlineActive = false;
+        let pixelActive = false;
+        let composer = null;
+        let outlineEffect = null;
+        let pixelEffect = null;
+        
+        function updateStatus(message, isError = false) {
+            status.textContent = message;
+            status.style.background = isError ? 'rgba(255,0,0,0.9)' : 'rgba(0,0,0,0.85)';
+            console.log(message);
+        }
+        
+        function updateActiveButton(animName) {
+            if (animName === 'z') {
+                btnZ.classList.add('active');
+                btnX.classList.remove('active');
+                btnStop.classList.remove('active');
+            } else if (animName === 'x') {
+                btnX.classList.add('active');
+                btnZ.classList.remove('active');
+                btnStop.classList.remove('active');
+            } else if (animName === null || animName === '') {
+                btnStop.classList.add('active');
+                btnZ.classList.remove('active');
+                btnX.classList.remove('active');
             }
+        }
+        
+        function stopAnimation() {
+            mv.animationName = null;
+            updateActiveButton(null);
+            updateStatus('Анимация остановлена');
+        }
+        
+        // Инициализация эффектов после загрузки модели
+        mv.addEventListener('load', async () => {
+            updateStatus('Модель CUP.glb загружена');
             
-            function updateActiveButton(animName) {
-                if (animName === 'z') {
-                    btnZ.classList.add('active');
-                    btnX.classList.remove('active');
-                    btnStop.classList.remove('active');
-                } else if (animName === 'x') {
-                    btnX.classList.add('active');
-                    btnZ.classList.remove('active');
-                    btnStop.classList.remove('active');
-                } else if (animName === null || animName === '') {
-                    btnStop.classList.add('active');
-                    btnZ.classList.remove('active');
-                    btnX.classList.remove('active');
+            try {
+                animations = mv.availableAnimations || [];
+                console.log('Доступные анимации:', animations);
+                
+                if (animations.length > 0) {
+                    updateStatus(`Найдено анимаций: ${animations.length} (${animations.join(', ')})`);
+                    
+                    if (animations.includes('z')) {
+                        mv.animationName = 'z';
+                        updateActiveButton('z');
+                        updateStatus('Запущена анимация: Z');
+                    } else if (animations.includes('x')) {
+                        mv.animationName = 'x';
+                        updateActiveButton('x');
+                        updateStatus('Запущена анимация: X');
+                    } else if (animations.length > 0) {
+                        mv.animationName = animations[0];
+                        updateStatus(`Запущена анимация: ${animations[0]}`);
+                    }
+                } else {
+                    updateStatus('Модель загружена, но анимации не найдены');
                 }
+                
+                // Инициализация эффектов
+                await mv.updateComplete;
+                
+                if (mv.composer) {
+                    composer = mv.composer;
+                    console.log('EffectComposer найден');
+                    
+                    // Получаем эффекты
+                    outlineEffect = document.getElementById('outlineEffect');
+                    pixelEffect = document.getElementById('pixelEffect');
+                    
+                    if (outlineEffect) {
+                        console.log('OutlineEffect найден');
+                    }
+                    if (pixelEffect) {
+                        console.log('PixelateEffect найден');
+                    }
+                }
+                
+            } catch (e) {
+                console.error('Ошибка:', e);
+                updateStatus('Ошибка при чтении анимаций', true);
             }
-            
-            // Эффект контура через изменение настроек модели
-            function toggleOutline() {
-                if (isOutlineActive) {
-                    mv.setAttribute('shadow-intensity', '1');
-                    mv.setAttribute('exposure', '1');
-                    isOutlineActive = false;
+        });
+        
+        mv.addEventListener('error', (error) => {
+            console.error('Ошибка загрузки:', error);
+            updateStatus('Файл CUP.glb не найден! Проверьте, что файл лежит в той же папке', true);
+        });
+        
+        // Управление контуром
+        btnOutline.addEventListener('click', () => {
+            if (outlineEffect) {
+                if (outlineActive) {
+                    outlineEffect.setAttribute('blend-mode', 'skip');
+                    outlineActive = false;
                     btnOutline.classList.remove('active');
                     updateStatus('Контур выключен');
                 } else {
-                    mv.setAttribute('shadow-intensity', '0');
-                    mv.setAttribute('exposure', '1.5');
-                    isOutlineActive = true;
+                    outlineEffect.setAttribute('blend-mode', 'default');
+                    outlineActive = true;
                     btnOutline.classList.add('active');
-                    updateStatus('Контур включен (увеличенная яркость)');
+                    updateStatus('Контур включен');
                 }
+            } else {
+                updateStatus('Эффект контура не найден', true);
             }
-            
-            // Эффект пикселизации через масштабирование
-            function togglePixel() {
-                if (isPixelActive) {
-                    mv.setAttribute('scale', '1 1 1');
-                    isPixelActive = false;
+        });
+        
+        // Управление пикселизацией
+        btnPixel.addEventListener('click', () => {
+            if (pixelEffect) {
+                if (pixelActive) {
+                    pixelEffect.setAttribute('blend-mode', 'skip');
+                    pixelActive = false;
                     btnPixel.classList.remove('active');
                     updateStatus('Пикселизация выключена');
                 } else {
-                    mv.setAttribute('scale', '0.15 0.15 0.15');
-                    isPixelActive = true;
+                    pixelEffect.setAttribute('blend-mode', 'default');
+                    pixelActive = true;
                     btnPixel.classList.add('active');
-                    updateStatus('Пикселизация включена (уменьшенный масштаб)');
+                    updateStatus('Пикселизация включена');
                 }
+            } else {
+                updateStatus('Эффект пикселизации не найден', true);
             }
-            
-            function stopAnimation() {
-                mv.animationName = null;
-                updateActiveButton(null);
-                updateStatus('Анимация остановлена');
-            }
-            
-            mv.addEventListener('load', () => {
-                updateStatus('Модель CUP.glb загружена');
-                
-                try {
-                    animations = mv.availableAnimations || [];
-                    console.log('Доступные анимации:', animations);
-                    
-                    if (animations.length > 0) {
-                        updateStatus(`Найдено анимаций: ${animations.length} (${animations.join(', ')})`);
-                        
-                        if (animations.includes('z')) {
-                            mv.animationName = 'z';
-                            updateActiveButton('z');
-                            updateStatus('Запущена анимация: Z');
-                        } else if (animations.includes('x')) {
-                            mv.animationName = 'x';
-                            updateActiveButton('x');
-                            updateStatus('Запущена анимация: X');
-                        } else if (animations.length > 0) {
-                            mv.animationName = animations[0];
-                            updateStatus(`Запущена анимация: ${animations[0]}`);
-                        }
-                    } else {
-                        updateStatus('Модель загружена, но анимации не найдены');
-                    }
-                } catch (e) {
-                    console.error('Ошибка:', e);
-                    updateStatus('Ошибка при чтении анимаций', true);
-                }
-            });
-            
-            mv.addEventListener('error', (error) => {
-                console.error('Ошибка загрузки:', error);
-                updateStatus('Файл CUP.glb не найден!', true);
-            });
-            
-            btnZ.addEventListener('click', () => {
-                mv.animationName = 'z';
-                updateActiveButton('z');
-                updateStatus('Анимация: Z');
-            });
-            
-            btnX.addEventListener('click', () => {
-                mv.animationName = 'x';
-                updateActiveButton('x');
-                updateStatus('Анимация: X');
-            });
-            
-            btnStop.addEventListener('click', () => {
-                stopAnimation();
-            });
-            
-            btnOutline.addEventListener('click', () => {
-                toggleOutline();
-            });
-            
-            btnPixel.addEventListener('click', () => {
-                togglePixel();
-            });
-            
-            console.log('Модель: CUP.glb');
-        })();
+        });
+        
+        btnZ.addEventListener('click', () => {
+            mv.animationName = 'z';
+            updateActiveButton('z');
+            updateStatus('Анимация: Z');
+        });
+        
+        btnX.addEventListener('click', () => {
+            mv.animationName = 'x';
+            updateActiveButton('x');
+            updateStatus('Анимация: X');
+        });
+        
+        btnStop.addEventListener('click', () => {
+            stopAnimation();
+        });
+        
+        console.log('Модель: CUP.glb');
+        console.log('Эффекты: контур и пикселизация');
     </script>
 </body>
 </html>
