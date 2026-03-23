@@ -113,18 +113,12 @@
             
             let animations = [];
             
-            // Функция обновления статуса
             function updateStatus(message, isError = false) {
                 status.textContent = message;
-                if (isError) {
-                    status.style.background = 'rgba(255,0,0,0.9)';
-                } else {
-                    status.style.background = 'rgba(0,0,0,0.85)';
-                }
+                status.style.background = isError ? 'rgba(255,0,0,0.9)' : 'rgba(0,0,0,0.85)';
                 console.log(message);
             }
             
-            // Обновление активной кнопки
             function updateActiveButton(animName) {
                 if (animName === 'z') {
                     btnZ.classList.add('active');
@@ -135,70 +129,53 @@
                 }
             }
             
-            // Проверяем загрузку модели
             mv.addEventListener('load', () => {
                 updateStatus('✅ Модель загружена! Проверяю анимации...');
                 
-                // Получаем список анимаций
                 try {
                     animations = mv.availableAnimations || [];
                     console.log('Доступные анимации:', animations);
                     
                     if (animations.length > 0) {
-                        updateStatus(`✅ Модель загружена! Найдено анимаций: ${animations.length} (${animations.join(', ')})`);
+                        updateStatus(`✅ Найдено анимаций: ${animations.length} (${animations.join(', ')})`);
                         
-                        // Если есть анимация z - запускаем её
                         if (animations.includes('z')) {
                             mv.animationName = 'z';
                             updateActiveButton('z');
-                            updateStatus(`✅ Играет анимация: z`);
-                        } 
-                        // Если нет z, но есть x
-                        else if (animations.includes('x')) {
+                        } else if (animations.includes('x')) {
                             mv.animationName = 'x';
                             updateActiveButton('x');
-                            updateStatus(`✅ Играет анимация: x`);
-                        }
-                        // Иначе запускаем первую доступную
-                        else if (animations.length > 0) {
+                        } else if (animations.length > 0) {
                             mv.animationName = animations[0];
-                            updateStatus(`✅ Играет анимация: ${animations[0]}`);
                         }
                     } else {
-                        updateStatus('⚠️ Модель загружена, но анимации не найдены. Проверьте файл CUP.glb');
+                        updateStatus('⚠️ Модель загружена, но анимации не найдены');
                     }
                 } catch (e) {
-                    console.error('Ошибка при получении анимаций:', e);
-                    updateStatus('❌ Ошибка при чтении анимаций из модели', true);
+                    console.error('Ошибка:', e);
+                    updateStatus('❌ Ошибка при чтении анимаций', true);
                 }
             });
             
-            // Ошибка загрузки
             mv.addEventListener('error', (error) => {
-                console.error('Ошибка загрузки модели:', error);
-                updateStatus('❌ Ошибка! Файл CUP.glb не найден или поврежден. Проверьте путь к файлу.', true);
+                console.error('Ошибка:', error);
+                updateStatus('❌ Ошибка! Файл CUP.glb не найден или поврежден', true);
             });
             
-            // Кнопка анимации Z
             btnZ.addEventListener('click', () => {
                 mv.animationName = 'z';
                 updateActiveButton('z');
-                updateStatus(`🎬 Переключено на анимацию: z`);
-                console.log('Playing animation: z');
+                updateStatus('🎬 Анимация: Z');
             });
             
-            // Кнопка анимации X
             btnX.addEventListener('click', () => {
                 mv.animationName = 'x';
                 updateActiveButton('x');
-                updateStatus(`🎬 Переключено на анимацию: x`);
-                console.log('Playing animation: x');
+                updateStatus('🎬 Анимация: X');
             });
             
-            // Выводим информацию о пути
             console.log('Путь к модели:', mv.src);
-            updateStatus(`🔍 Загружаю модель: ${mv.src}`);
+            updateStatus(`🔍 Загружаю: ${mv.src}`);
         })();
     </script>
 </body>
-</html>
