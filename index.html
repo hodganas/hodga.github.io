@@ -17,17 +17,25 @@
         }
     </script>
     
-    <!-- Используем рабочие версии из jsdelivr -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer-module.min.js"></script>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer-effects@3.5.0/dist/model-viewer-effects.min.js"></script>
+    <!-- model-viewer 3.5.0 с Google CDN -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+    
+    <!-- model-viewer-effects для этой же версии -->
+    <script type="module">
+        import 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer-effects.js';
+    </script>
     
     <style>
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f5f5f7;
             overflow: hidden;
-            touch-action: pan-y pinch-zoom;
+            font-family: Arial, sans-serif;
+        }
+        
+        model-viewer {
+            width: 100vw;
+            height: 100vh;
+            background-color: #f5f5f5;
         }
         
         #controls {
@@ -36,24 +44,14 @@
             left: 50%;
             transform: translateX(-50%);
             z-index: 100;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(0, 0, 0, 0.8);
             padding: 12px 20px;
             border-radius: 40px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            backdrop-filter: blur(5px);
-            border: 1px solid #e0e0e0;
+            backdrop-filter: blur(10px);
             display: flex;
             gap: 10px;
-            width: auto;
-            max-width: 90vw;
-            overflow-x: auto;
-            white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-        }
-        
-        #controls::-webkit-scrollbar {
-            display: none;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         
         button {
@@ -61,50 +59,40 @@
             cursor: pointer;
             background: #ffffff;
             color: #333;
-            border: 1px solid #ddd;
+            border: none;
             border-radius: 30px;
             font-weight: bold;
             font-size: 14px;
             transition: all 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            white-space: nowrap;
-            flex-shrink: 0;
-            touch-action: manipulation;
         }
         
         button:active {
-            background: #f0f0f0;
             transform: scale(0.95);
         }
         
         button.active {
             background: #ff5500;
             color: white;
-            border-color: #ff5500;
         }
         
-        model-viewer {
-            width: 100vw;
-            height: 100vh;
-            background: #ffffff;
-            touch-action: pan-y pinch-zoom;
+        .effect-btn {
+            background: #4a4a4a;
+            color: white;
         }
         
-        @media (max-width: 768px) {
-            model-viewer {
-                --progress-bar-height: 2px;
-            }
+        .effect-btn.active {
+            background: #ff5500;
         }
     </style>
 </head>
 <body>
     <div id="controls">
-        <button id="btnZ">🎬 Анимация Z</button>
-        <button id="btnX">🚶 Анимация X</button>
-        <button id="outlineBtn">✨ Контур</button>
-        <button id="pixelBtn">🔳 Пикселизация</button>
+        <button id="btnZ">Анимация Z</button>
+        <button id="btnX">Анимация X</button>
+        <button id="outlineBtn" class="effect-btn">✨ Контур</button>
+        <button id="pixelBtn" class="effect-btn">🔳 Пикселизация</button>
     </div>
-    
+
     <model-viewer
         id="mv"
         src="CUP.glb"
@@ -114,114 +102,83 @@
         animation-crossfade-duration="300"
         shadow-intensity="1"
         exposure="1"
-        style="background-color: #ffffff;"
         camera-orbit="0deg 75deg 5m"
-        min-camera-orbit="auto auto 2m"
-        max-camera-orbit="auto auto 10m"
-        interaction-prompt="none">
+        style="background-color: #f5f5f5;">
         
         <effect-composer>
             <outline-effect id="outlineEffect" color="red" blend-mode="skip"></outline-effect>
             <pixelate-effect id="pixelEffect" granularity="15" blend-mode="skip"></pixelate-effect>
         </effect-composer>
     </model-viewer>
-    
+
     <script type="module">
-        (() => {
-            console.log('🚀 Script started');
-            
-            const mv = document.getElementById('mv');
-            const btnZ = document.getElementById('btnZ');
-            const btnX = document.getElementById('btnX');
-            const outlineBtn = document.getElementById('outlineBtn');
-            const pixelBtn = document.getElementById('pixelBtn');
-            
-            let isOutlineActive = false;
-            let isPixelActive = false;
-            let outlineEffect, pixelEffect;
-            
-            // Ждем загрузки всех компонентов
-            const initEffects = async () => {
-                await customElements.whenDefined('model-viewer');
-                await customElements.whenDefined('effect-composer');
-                
-                outlineEffect = document.getElementById('outlineEffect');
-                pixelEffect = document.getElementById('pixelEffect');
-                
-                console.log('Effects found:', { outlineEffect, pixelEffect });
-            };
-            
-            initEffects();
-            
-            // Функция переключения контура
-            function toggleOutline() {
-                if (outlineEffect) {
-                    if (isOutlineActive) {
-                        outlineEffect.blendMode = 'skip';
-                        isOutlineActive = false;
-                        outlineBtn.classList.remove('active');
-                        console.log('🔴 Outline OFF');
-                    } else {
-                        outlineEffect.blendMode = 'default';
-                        isOutlineActive = true;
-                        outlineBtn.classList.add('active');
-                        console.log('🟢 Outline ON');
-                    }
-                }
+        // Ждем загрузки всех компонентов
+        await customElements.whenDefined('model-viewer');
+        await customElements.whenDefined('effect-composer');
+        
+        const mv = document.getElementById('mv');
+        const outlineEffect = document.getElementById('outlineEffect');
+        const pixelEffect = document.getElementById('pixelEffect');
+        const btnZ = document.getElementById('btnZ');
+        const btnX = document.getElementById('btnX');
+        const outlineBtn = document.getElementById('outlineBtn');
+        const pixelBtn = document.getElementById('pixelBtn');
+        
+        let isOutlineActive = false;
+        let isPixelActive = false;
+        
+        // Переключение контура
+        outlineBtn.onclick = () => {
+            if (isOutlineActive) {
+                outlineEffect.blendMode = 'skip';
+                isOutlineActive = false;
+                outlineBtn.classList.remove('active');
+            } else {
+                outlineEffect.blendMode = 'default';
+                isOutlineActive = true;
+                outlineBtn.classList.add('active');
             }
-            
-            // Функция переключения пикселизации
-            function togglePixel() {
-                if (pixelEffect) {
-                    if (isPixelActive) {
-                        pixelEffect.blendMode = 'skip';
-                        isPixelActive = false;
-                        pixelBtn.classList.remove('active');
-                        pixelBtn.innerHTML = '🔳 Пикселизация';
-                        console.log('📷 Pixel OFF');
-                    } else {
-                        pixelEffect.blendMode = 'default';
-                        isPixelActive = true;
-                        pixelBtn.classList.add('active');
-                        pixelBtn.innerHTML = '✅ Пикселизация';
-                        console.log('📷 Pixel ON');
-                    }
-                }
+        };
+        
+        // Переключение пикселизации
+        pixelBtn.onclick = () => {
+            if (isPixelActive) {
+                pixelEffect.blendMode = 'skip';
+                isPixelActive = false;
+                pixelBtn.classList.remove('active');
+            } else {
+                pixelEffect.blendMode = 'default';
+                isPixelActive = true;
+                pixelBtn.classList.add('active');
             }
+        };
+        
+        // Анимации
+        btnZ.onclick = () => {
+            mv.animationName = 'z';
+            btnZ.classList.add('active');
+            btnX.classList.remove('active');
+        };
+        
+        btnX.onclick = () => {
+            mv.animationName = 'x';
+            btnX.classList.add('active');
+            btnZ.classList.remove('active');
+        };
+        
+        // Загрузка модели
+        mv.addEventListener('load', () => {
+            console.log('Модель загружена');
+            console.log('Доступные анимации:', mv.availableAnimations);
             
-            // Анимации
-            btnZ.onclick = () => {
-                mv.animationName = 'z';
+            if (mv.availableAnimations?.includes('z')) {
                 btnZ.classList.add('active');
-                btnX.classList.remove('active');
-                console.log('Playing animation: Z');
-            };
-            
-            btnX.onclick = () => {
-                mv.animationName = 'x';
-                btnX.classList.add('active');
-                btnZ.classList.remove('active');
-                console.log('Playing animation: X');
-            };
-            
-            // Эффекты
-            outlineBtn.onclick = toggleOutline;
-            pixelBtn.onclick = togglePixel;
-            
-            // Загрузка модели
-            mv.addEventListener('load', () => {
-                console.log('✅ Model loaded');
-                console.log('Animations:', mv.availableAnimations);
-                
-                if (mv.availableAnimations?.includes('z')) {
-                    btnZ.classList.add('active');
-                }
-            });
-            
-            mv.addEventListener('error', (e) => {
-                console.error('❌ Model error:', e);
-            });
-        })();
+            }
+        });
+        
+        mv.addEventListener('error', () => {
+            console.error('Ошибка: файл CUP.glb не найден');
+        });
     </script>
 </body>
 </html>
