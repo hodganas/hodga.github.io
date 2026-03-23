@@ -16,6 +16,19 @@
             width: 100vw;
             height: 100vh;
             background-color: #f5f5f5;
+            transition: all 0.3s ease;
+        }
+        
+        /* Эффект контура */
+        model-viewer.outline-active {
+            filter: drop-shadow(0 0 3px red) drop-shadow(0 0 3px red) drop-shadow(0 0 5px red) drop-shadow(0 0 8px rgba(255,0,0,0.5));
+        }
+        
+        /* Эффект пикселизации */
+        model-viewer.pixel-active {
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: optimizeSpeed;
         }
         
         #status {
@@ -162,12 +175,12 @@
             
             function toggleOutline() {
                 if (isOutlineActive) {
-                    mv.style.filter = 'none';
+                    mv.classList.remove('outline-active');
                     isOutlineActive = false;
                     btnOutline.classList.remove('active');
                     updateStatus('Контур выключен');
                 } else {
-                    mv.style.filter = 'drop-shadow(0 0 2px red) drop-shadow(0 0 2px red) drop-shadow(0 0 2px red)';
+                    mv.classList.add('outline-active');
                     isOutlineActive = true;
                     btnOutline.classList.add('active');
                     updateStatus('Контур включен');
@@ -176,12 +189,12 @@
             
             function togglePixel() {
                 if (isPixelActive) {
-                    mv.style.imageRendering = 'auto';
+                    mv.classList.remove('pixel-active');
                     isPixelActive = false;
                     btnPixel.classList.remove('active');
                     updateStatus('Пикселизация выключена');
                 } else {
-                    mv.style.imageRendering = 'pixelated';
+                    mv.classList.add('pixel-active');
                     isPixelActive = true;
                     btnPixel.classList.add('active');
                     updateStatus('Пикселизация включена');
@@ -258,4 +271,3 @@
         })();
     </script>
 </body>
-</html>
