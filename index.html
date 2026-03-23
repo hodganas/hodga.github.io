@@ -1,11 +1,12 @@
+html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>3D Модель Кружка с эффектами</title>
+    <title>3D Модель Кружка</title>
     
-    <!-- Скрипт для поддержки import maps в Safari -->
+    <!-- Поддержка import maps -->
     <script async src="https://ga.jspm.io/npm:es-module-shims@1.7.1/dist/es-module-shims.js"></script>
     
     <!-- Import map для Three.js -->
@@ -17,152 +18,76 @@
         }
     </script>
     
-    <!-- Подключаем модульную версию model-viewer и эффекты -->
+    <!-- Подключаем model-viewer и эффекты -->
     <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer-module.min.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer-effects/dist/model-viewer-effects.min.js"></script>
     
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-        }
+        body { margin: 0; overflow: hidden; }
+        model-viewer { width: 100vw; height: 100vh; background: #f5f5f5; }
         
-        model-viewer {
-            width: 100vw;
-            height: 100vh;
-            background-color: #f5f5f5;
-        }
-        
-        #status {
+        .controls {
             position: fixed;
             bottom: 20px;
-            left: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.85);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 12px;
-            font-family: monospace;
-            font-size: 14px;
-            z-index: 1000;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-            pointer-events: none;
-            text-align: center;
-        }
-        
-        .animation-controls {
-            position: fixed;
-            top: 20px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
             gap: 10px;
-            z-index: 1000;
             background: rgba(0,0,0,0.8);
             padding: 10px 20px;
-            border-radius: 50px;
-            backdrop-filter: blur(10px);
-        }
-        
-        .effects-panel {
-            position: fixed;
-            bottom: 90px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 10px;
+            border-radius: 40px;
             z-index: 1000;
-            background: rgba(0,0,0,0.8);
-            padding: 12px 20px;
-            border-radius: 50px;
-            backdrop-filter: blur(10px);
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        .effects-panel div {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .effects-panel label {
-            color: white;
-            font-size: 13px;
-            cursor: pointer;
-        }
-        
-        .effects-panel input {
-            cursor: pointer;
-            width: 16px;
-            height: 16px;
         }
         
         button {
             padding: 8px 16px;
             font-size: 14px;
-            font-weight: bold;
             border: none;
-            border-radius: 40px;
+            border-radius: 30px;
             cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        button:active {
-            transform: scale(0.95);
-        }
-        
-        .btn-z {
             background: #4CAF50;
             color: white;
         }
         
-        .btn-x {
-            background: #2196F3;
+        button:active { transform: scale(0.95); }
+        .active { box-shadow: 0 0 0 2px white, 0 0 0 4px #ff5500; }
+        
+        .effect-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 10px 15px;
+            border-radius: 20px;
             color: white;
+            font-size: 12px;
+            z-index: 1000;
         }
         
-        button.active {
-            box-shadow: 0 0 0 2px white, 0 0 0 4px #ff5500;
+        .effect-panel div {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px 0;
         }
+        
+        .effect-panel label { cursor: pointer; }
     </style>
 </head>
 <body>
-    <div id="status">
-        Загрузка модели CUP.glb...
+    <div class="controls">
+        <button id="btnZ">Анимация Z</button>
+        <button id="btnX">Анимация X</button>
     </div>
     
-    <div class="animation-controls">
-        <button id="btnZ" class="btn-z">Анимация Z</button>
-        <button id="btnX" class="btn-x">Анимация X</button>
-    </div>
-
-    <div class="effects-panel">
+    <div class="effect-panel">
         <div>
             <input type="checkbox" id="outlineCheck">
-            <label for="outlineCheck">Контур (Outline)</label>
+            <label>Контур</label>
         </div>
         <div>
             <input type="checkbox" id="pixelateCheck">
-            <label for="pixelateCheck">Пикселизация (Pixelate)</label>
-        </div>
-        <div>
-            <input type="checkbox" id="glitchCheck">
-            <label for="glitchCheck">Глитч (Glitch)</label>
-        </div>
-        <div>
-            <input type="checkbox" id="ssaoCheck">
-            <label for="ssaoCheck">SSAO</label>
-        </div>
-        <div>
-            <input type="checkbox" id="bloomCheck">
-            <label for="bloomCheck">Bloom</label>
-        </div>
-        <div>
-            <input type="checkbox" id="colorgradeCheck" checked>
-            <label for="colorgradeCheck">Цветокоррекция</label>
+            <label>Пикселизация</label>
         </div>
     </div>
 
@@ -172,145 +97,39 @@
         camera-controls
         autoplay
         animation-name="z"
-        animation-crossfade-duration="300"
         shadow-intensity="1"
-        exposure="1"
-        camera-orbit="0deg 75deg 5m"
-        min-camera-orbit="auto auto 2m"
-        max-camera-orbit="auto auto 10m"
-        style="background-color: #f5f5f5;">
+        style="background: #f5f5f5;">
         
         <effect-composer render-mode="quality">
             <outline-effect id="outlineEffect" color="red" blend-mode="skip"></outline-effect>
             <pixelate-effect id="pixelateEffect" granularity="15" blend-mode="skip"></pixelate-effect>
-            <glitch-effect id="glitchEffect" blend-mode="skip"></glitch-effect>
-            <ssao-effect id="ssaoEffect" blend-mode="skip"></ssao-effect>
-            <bloom-effect id="bloomEffect" blend-mode="skip"></bloom-effect>
-            <color-grade-effect id="colorGradeEffect" blend-mode="default"></color-grade-effect>
         </effect-composer>
     </model-viewer>
 
     <script type="module">
-        // Получаем элементы
         const mv = document.getElementById('mv');
-        const status = document.getElementById('status');
-        const btnZ = document.getElementById('btnZ');
-        const btnX = document.getElementById('btnX');
-        
-        // Получаем эффекты
         const outlineEffect = document.getElementById('outlineEffect');
         const pixelateEffect = document.getElementById('pixelateEffect');
-        const glitchEffect = document.getElementById('glitchEffect');
-        const ssaoEffect = document.getElementById('ssaoEffect');
-        const bloomEffect = document.getElementById('bloomEffect');
-        const colorGradeEffect = document.getElementById('colorGradeEffect');
-        
-        // Получаем чекбоксы
         const outlineCheck = document.getElementById('outlineCheck');
         const pixelateCheck = document.getElementById('pixelateCheck');
-        const glitchCheck = document.getElementById('glitchCheck');
-        const ssaoCheck = document.getElementById('ssaoCheck');
-        const bloomCheck = document.getElementById('bloomCheck');
-        const colorGradeCheck = document.getElementById('colorgradeCheck');
         
-        let animations = [];
-        
-        function updateStatus(message, isError = false) {
-            status.textContent = message;
-            status.style.background = isError ? 'rgba(255,0,0,0.9)' : 'rgba(0,0,0,0.85)';
-            console.log(message);
-        }
-        
-        function updateActiveButton(animName) {
-            if (animName === 'z') {
-                btnZ.classList.add('active');
-                btnX.classList.remove('active');
-            } else if (animName === 'x') {
-                btnX.classList.add('active');
-                btnZ.classList.remove('active');
-            }
-        }
-        
-        // Управление эффектами
+        // Переключение эффектов
         outlineCheck.addEventListener('change', (e) => {
             outlineEffect.blendMode = e.target.checked ? 'default' : 'skip';
-            updateStatus(e.target.checked ? 'Контур включен' : 'Контур выключен');
         });
         
         pixelateCheck.addEventListener('change', (e) => {
             pixelateEffect.blendMode = e.target.checked ? 'default' : 'skip';
-            updateStatus(e.target.checked ? 'Пикселизация включена' : 'Пикселизация выключена');
         });
         
-        glitchCheck.addEventListener('change', (e) => {
-            glitchEffect.blendMode = e.target.checked ? 'default' : 'skip';
-            updateStatus(e.target.checked ? 'Глитч эффект включен' : 'Глитч эффект выключен');
-        });
+        // Анимации
+        document.getElementById('btnZ').onclick = () => mv.animationName = 'z';
+        document.getElementById('btnX').onclick = () => mv.animationName = 'x';
         
-        ssaoCheck.addEventListener('change', (e) => {
-            ssaoEffect.blendMode = e.target.checked ? 'default' : 'skip';
-            updateStatus(e.target.checked ? 'SSAO включен' : 'SSAO выключен');
-        });
-        
-        bloomCheck.addEventListener('change', (e) => {
-            bloomEffect.blendMode = e.target.checked ? 'default' : 'skip';
-            updateStatus(e.target.checked ? 'Bloom эффект включен' : 'Bloom эффект выключен');
-        });
-        
-        colorGradeCheck.addEventListener('change', (e) => {
-            colorGradeEffect.blendMode = e.target.checked ? 'default' : 'skip';
-            updateStatus(e.target.checked ? 'Цветокоррекция включена' : 'Цветокоррекция выключена');
-        });
-        
+        // Статус загрузки
         mv.addEventListener('load', () => {
-            updateStatus('Модель CUP.glb загружена');
-            
-            try {
-                animations = mv.availableAnimations || [];
-                console.log('Доступные анимации:', animations);
-                
-                if (animations.length > 0) {
-                    updateStatus(`Найдено анимаций: ${animations.length} (${animations.join(', ')})`);
-                    
-                    if (animations.includes('z')) {
-                        mv.animationName = 'z';
-                        updateActiveButton('z');
-                        updateStatus('Запущена анимация: Z');
-                    } else if (animations.includes('x')) {
-                        mv.animationName = 'x';
-                        updateActiveButton('x');
-                        updateStatus('Запущена анимация: X');
-                    } else if (animations.length > 0) {
-                        mv.animationName = animations[0];
-                        updateStatus(`Запущена анимация: ${animations[0]}`);
-                    }
-                } else {
-                    updateStatus('Модель загружена, но анимации не найдены');
-                }
-            } catch (e) {
-                console.error('Ошибка:', e);
-                updateStatus('Ошибка при чтении анимаций', true);
-            }
+            console.log('Модель загружена, анимации:', mv.availableAnimations);
         });
-        
-        mv.addEventListener('error', (error) => {
-            console.error('Ошибка загрузки:', error);
-            updateStatus('Файл CUP.glb не найден! Проверьте, что файл лежит в той же папке', true);
-        });
-        
-        btnZ.addEventListener('click', () => {
-            mv.animationName = 'z';
-            updateActiveButton('z');
-            updateStatus('Анимация: Z');
-        });
-        
-        btnX.addEventListener('click', () => {
-            mv.animationName = 'x';
-            updateActiveButton('x');
-            updateStatus('Анимация: X');
-        });
-        
-        console.log('Модель: CUP.glb');
     </script>
 </body>
 </html>
