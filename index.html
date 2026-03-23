@@ -17,12 +17,9 @@
         }
     </script>
     
-    <!-- Используем совместимые версии model-viewer и эффектов (3.5.0) -->
-    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
-    <script type="module">
-        // Ручная загрузка эффектов через CDN с правильной версией
-        import 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer-effects.js';
-    </script>
+    <!-- Используем рабочие версии из jsdelivr -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer-module.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer-effects@3.5.0/dist/model-viewer-effects.min.js"></script>
     
     <style>
         body {
@@ -139,59 +136,58 @@
             const outlineBtn = document.getElementById('outlineBtn');
             const pixelBtn = document.getElementById('pixelBtn');
             
-            // Ждем загрузки model-viewer и эффектов
-            Promise.all([
-                customElements.whenDefined('model-viewer'),
-                customElements.whenDefined('effect-composer')
-            ]).then(() => {
-                console.log('✅ Components loaded');
+            let isOutlineActive = false;
+            let isPixelActive = false;
+            let outlineEffect, pixelEffect;
+            
+            // Ждем загрузки всех компонентов
+            const initEffects = async () => {
+                await customElements.whenDefined('model-viewer');
+                await customElements.whenDefined('effect-composer');
                 
-                const outlineEffect = document.getElementById('outlineEffect');
-                const pixelEffect = document.getElementById('pixelEffect');
+                outlineEffect = document.getElementById('outlineEffect');
+                pixelEffect = document.getElementById('pixelEffect');
                 
-                let isOutlineActive = false;
-                let isPixelActive = false;
-                
-                // Функция переключения контура
-                window.toggleOutline = function() {
-                    if (outlineEffect) {
-                        if (isOutlineActive) {
-                            outlineEffect.blendMode = 'skip';
-                            isOutlineActive = false;
-                            outlineBtn.classList.remove('active');
-                            console.log('🔴 Outline OFF');
-                        } else {
-                            outlineEffect.blendMode = 'default';
-                            isOutlineActive = true;
-                            outlineBtn.classList.add('active');
-                            console.log('🟢 Outline ON');
-                        }
+                console.log('Effects found:', { outlineEffect, pixelEffect });
+            };
+            
+            initEffects();
+            
+            // Функция переключения контура
+            function toggleOutline() {
+                if (outlineEffect) {
+                    if (isOutlineActive) {
+                        outlineEffect.blendMode = 'skip';
+                        isOutlineActive = false;
+                        outlineBtn.classList.remove('active');
+                        console.log('🔴 Outline OFF');
+                    } else {
+                        outlineEffect.blendMode = 'default';
+                        isOutlineActive = true;
+                        outlineBtn.classList.add('active');
+                        console.log('🟢 Outline ON');
                     }
-                };
-                
-                // Функция переключения пикселизации
-                window.togglePixel = function() {
-                    if (pixelEffect) {
-                        if (isPixelActive) {
-                            pixelEffect.blendMode = 'skip';
-                            isPixelActive = false;
-                            pixelBtn.classList.remove('active');
-                            pixelBtn.innerHTML = '🔳 Пикселизация';
-                            console.log('📷 Pixel OFF');
-                        } else {
-                            pixelEffect.blendMode = 'default';
-                            isPixelActive = true;
-                            pixelBtn.classList.add('active');
-                            pixelBtn.innerHTML = '✅ Пикселизация';
-                            console.log('📷 Pixel ON');
-                        }
+                }
+            }
+            
+            // Функция переключения пикселизации
+            function togglePixel() {
+                if (pixelEffect) {
+                    if (isPixelActive) {
+                        pixelEffect.blendMode = 'skip';
+                        isPixelActive = false;
+                        pixelBtn.classList.remove('active');
+                        pixelBtn.innerHTML = '🔳 Пикселизация';
+                        console.log('📷 Pixel OFF');
+                    } else {
+                        pixelEffect.blendMode = 'default';
+                        isPixelActive = true;
+                        pixelBtn.classList.add('active');
+                        pixelBtn.innerHTML = '✅ Пикселизация';
+                        console.log('📷 Pixel ON');
                     }
-                };
-                
-                // Кнопки эффектов
-                outlineBtn.onclick = () => window.toggleOutline();
-                pixelBtn.onclick = () => window.togglePixel();
-            });
+                }
+            }
             
             // Анимации
             btnZ.onclick = () => {
@@ -207,6 +203,10 @@
                 btnZ.classList.remove('active');
                 console.log('Playing animation: X');
             };
+            
+            // Эффекты
+            outlineBtn.onclick = toggleOutline;
+            pixelBtn.onclick = togglePixel;
             
             // Загрузка модели
             mv.addEventListener('load', () => {
