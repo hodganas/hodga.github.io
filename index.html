@@ -22,15 +22,30 @@
             transition: all 0.2s ease;
         }
         
-        /* Эффект контура через фильтр */
+        /* Усиленный эффект контура - яркое красное свечение */
         model-viewer.outline {
-            filter: drop-shadow(0 0 3px red) drop-shadow(0 0 3px red);
+            filter: drop-shadow(0 0 5px red) 
+                    drop-shadow(0 0 10px red) 
+                    drop-shadow(0 0 15px red)
+                    drop-shadow(0 0 20px rgba(255,0,0,0.5));
         }
         
-        /* Эффект пикселизации */
+        /* Усиленный эффект пикселизации - крупные пиксели */
         model-viewer.pixel {
             image-rendering: crisp-edges;
             image-rendering: pixelated;
+            image-rendering: optimizeSpeed;
+            transform: scale(0.98);
+            filter: contrast(1.2) saturate(1.1);
+        }
+        
+        /* Комбо эффект - контур + пикселизация */
+        model-viewer.outline.pixel {
+            filter: drop-shadow(0 0 5px red) 
+                    drop-shadow(0 0 10px red) 
+                    drop-shadow(0 0 15px red)
+                    contrast(1.2) 
+                    saturate(1.1);
         }
         
         #controls {
@@ -39,18 +54,19 @@
             left: 50%;
             transform: translateX(-50%);
             z-index: 100;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 12px 20px;
-            border-radius: 40px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 15px 25px;
+            border-radius: 50px;
             backdrop-filter: blur(10px);
             display: flex;
-            gap: 10px;
+            gap: 15px;
             flex-wrap: wrap;
             justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
         
         button {
-            padding: 10px 18px;
+            padding: 10px 20px;
             cursor: pointer;
             background: #ffffff;
             color: #333;
@@ -59,6 +75,7 @@
             font-weight: bold;
             font-size: 14px;
             transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         
         button:active {
@@ -68,6 +85,7 @@
         button.active {
             background: #ff5500;
             color: white;
+            box-shadow: 0 0 10px rgba(255,85,0,0.5);
         }
         
         .effect-btn {
@@ -77,6 +95,13 @@
         
         .effect-btn.active {
             background: #ff5500;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255,85,0,0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255,85,0,0); }
+            100% { box-shadow: 0 0 0 0 rgba(255,85,0,0); }
         }
     </style>
 </head>
@@ -84,8 +109,8 @@
     <div id="controls">
         <button id="btnZ">Анимация Z</button>
         <button id="btnX">Анимация X</button>
-        <button id="outlineBtn" class="effect-btn">Контур</button>
-        <button id="pixelBtn" class="effect-btn">Пикселизация</button>
+        <button id="outlineBtn" class="effect-btn">🔴 Контур</button>
+        <button id="pixelBtn" class="effect-btn">📺 Пикселизация</button>
     </div>
 
     <model-viewer
@@ -111,29 +136,33 @@
         let outlineActive = false;
         let pixelActive = false;
         
-        // Контур
+        // Контур (усиленный)
         outlineBtn.onclick = () => {
             if (outlineActive) {
                 mv.classList.remove('outline');
                 outlineBtn.classList.remove('active');
                 outlineActive = false;
+                console.log('Контур выключен');
             } else {
                 mv.classList.add('outline');
                 outlineBtn.classList.add('active');
                 outlineActive = true;
+                console.log('Контур включен (усиленный)');
             }
         };
         
-        // Пикселизация
+        // Пикселизация (усиленная)
         pixelBtn.onclick = () => {
             if (pixelActive) {
                 mv.classList.remove('pixel');
                 pixelBtn.classList.remove('active');
                 pixelActive = false;
+                console.log('Пикселизация выключена');
             } else {
                 mv.classList.add('pixel');
                 pixelBtn.classList.add('active');
                 pixelActive = true;
+                console.log('Пикселизация включена (усиленная)');
             }
         };
         
@@ -157,7 +186,6 @@
             console.log('Модель загружена');
             console.log('Доступные анимации:', mv.availableAnimations);
             
-            // Если есть анимация z - активируем кнопку
             const animations = mv.availableAnimations || [];
             if (animations.includes('z')) {
                 btnZ.classList.add('active');
