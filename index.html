@@ -100,7 +100,7 @@
 </head>
 <body>
     <div id="status">
-        🔄 Загрузка модели...
+        🔄 Загрузка модели CUP.glb...
     </div>
     
     <div id="controls">
@@ -154,7 +154,6 @@
                 }
             }
             
-            // Простые эффекты через CSS (вместо сложных three.js эффектов)
             function toggleOutline() {
                 if (isOutlineActive) {
                     mv.style.outline = 'none';
@@ -185,23 +184,26 @@
             }
             
             mv.addEventListener('load', () => {
-                updateStatus('✅ Модель загружена!');
+                updateStatus('✅ Модель CUP.glb загружена!');
                 
                 try {
                     animations = mv.availableAnimations || [];
                     console.log('Доступные анимации:', animations);
                     
                     if (animations.length > 0) {
-                        updateStatus(`✅ Анимации: ${animations.join(', ')}`);
+                        updateStatus(`✅ Найдено анимаций: ${animations.length} (${animations.join(', ')})`);
                         
                         if (animations.includes('z')) {
                             mv.animationName = 'z';
                             updateActiveButton('z');
+                            updateStatus(`🎬 Запущена анимация: Z`);
                         } else if (animations.includes('x')) {
                             mv.animationName = 'x';
                             updateActiveButton('x');
+                            updateStatus(`🎬 Запущена анимация: X`);
                         } else if (animations.length > 0) {
                             mv.animationName = animations[0];
+                            updateStatus(`🎬 Запущена анимация: ${animations[0]}`);
                         }
                     } else {
                         updateStatus('⚠️ Модель загружена, но анимации не найдены');
@@ -213,20 +215,22 @@
             });
             
             mv.addEventListener('error', (error) => {
-                console.error('Ошибка:', error);
-                updateStatus('❌ Файл CUP.glb не найден!', true);
+                console.error('Ошибка загрузки:', error);
+                updateStatus('❌ Файл CUP.glb не найден! Проверьте, что файл лежит в той же папке', true);
             });
             
             btnZ.addEventListener('click', () => {
                 mv.animationName = 'z';
                 updateActiveButton('z');
                 updateStatus('🎬 Анимация: Z');
+                console.log('Запущена анимация Z');
             });
             
             btnX.addEventListener('click', () => {
                 mv.animationName = 'x';
                 updateActiveButton('x');
                 updateStatus('🎬 Анимация: X');
+                console.log('Запущена анимация X');
             });
             
             btnOutline.addEventListener('click', () => {
@@ -237,7 +241,9 @@
                 togglePixel();
             });
             
-            console.log('Модель: CUP.glb');
+            // Выводим информацию о загрузке
+            console.log('HTML загружен. Модель: CUP.glb');
+            console.log('Ожидаем загрузки модели...');
         })();
     </script>
 </body>
