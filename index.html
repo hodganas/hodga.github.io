@@ -8,7 +8,7 @@
     <!-- Поддержка import maps для Safari -->
     <script async src="https://ga.jspm.io/npm:es-module-shims@1.7.1/dist/es-module-shims.js"></script>
     
-    <!-- Import map для Three.js -->
+    <!-- Import map для Three.js - нужна совместимая версия -->
     <script type="importmap">
         {
             "imports": {
@@ -17,13 +17,8 @@
         }
     </script>
     
-    <!-- model-viewer 3.5.0 с Google CDN -->
+    <!-- model-viewer 3.5.0 с Google CDN (эффекты уже внутри) -->
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
-    
-    <!-- model-viewer-effects для этой же версии -->
-    <script type="module">
-        import 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer-effects.js';
-    </script>
     
     <style>
         body {
@@ -89,8 +84,8 @@
     <div id="controls">
         <button id="btnZ">Анимация Z</button>
         <button id="btnX">Анимация X</button>
-        <button id="outlineBtn" class="effect-btn">✨ Контур</button>
-        <button id="pixelBtn" class="effect-btn">🔳 Пикселизация</button>
+        <button id="outlineBtn" class="effect-btn">Контур</button>
+        <button id="pixelBtn" class="effect-btn">Пикселизация</button>
     </div>
 
     <model-viewer
@@ -112,13 +107,10 @@
     </model-viewer>
 
     <script type="module">
-        // Ждем загрузки всех компонентов
+        // Ждем загрузки model-viewer
         await customElements.whenDefined('model-viewer');
-        await customElements.whenDefined('effect-composer');
         
         const mv = document.getElementById('mv');
-        const outlineEffect = document.getElementById('outlineEffect');
-        const pixelEffect = document.getElementById('pixelEffect');
         const btnZ = document.getElementById('btnZ');
         const btnX = document.getElementById('btnX');
         const outlineBtn = document.getElementById('outlineBtn');
@@ -127,14 +119,33 @@
         let isOutlineActive = false;
         let isPixelActive = false;
         
+        // Получаем эффекты после загрузки модели
+        mv.addEventListener('load', () => {
+            console.log('Модель загружена');
+            console.log('Доступные анимации:', mv.availableAnimations);
+            
+            // Активируем кнопку Z если анимация есть
+            if (mv.availableAnimations?.includes('z')) {
+                btnZ.classList.add('active');
+            }
+        });
+        
+        mv.addEventListener('error', () => {
+            console.error('Ошибка: файл CUP.glb не найден');
+        });
+        
+        // Эффекты - получаем их из model-viewer
+        const outlineEffect = document.getElementById('outlineEffect');
+        const pixelEffect = document.getElementById('pixelEffect');
+        
         // Переключение контура
         outlineBtn.onclick = () => {
             if (isOutlineActive) {
-                outlineEffect.blendMode = 'skip';
+                if (outlineEffect) outlineEffect.blendMode = 'skip';
                 isOutlineActive = false;
                 outlineBtn.classList.remove('active');
             } else {
-                outlineEffect.blendMode = 'default';
+                if (outlineEffect) outlineEffect.blendMode = 'default';
                 isOutlineActive = true;
                 outlineBtn.classList.add('active');
             }
@@ -143,11 +154,11 @@
         // Переключение пикселизации
         pixelBtn.onclick = () => {
             if (isPixelActive) {
-                pixelEffect.blendMode = 'skip';
+                if (pixelEffect) pixelEffect.blendMode = 'skip';
                 isPixelActive = false;
                 pixelBtn.classList.remove('active');
             } else {
-                pixelEffect.blendMode = 'default';
+                if (pixelEffect) pixelEffect.blendMode = 'default';
                 isPixelActive = true;
                 pixelBtn.classList.add('active');
             }
@@ -165,20 +176,6 @@
             btnX.classList.add('active');
             btnZ.classList.remove('active');
         };
-        
-        // Загрузка модели
-        mv.addEventListener('load', () => {
-            console.log('Модель загружена');
-            console.log('Доступные анимации:', mv.availableAnimations);
-            
-            if (mv.availableAnimations?.includes('z')) {
-                btnZ.classList.add('active');
-            }
-        });
-        
-        mv.addEventListener('error', () => {
-            console.error('Ошибка: файл CUP.glb не найден');
-        });
     </script>
 </body>
 </html>
