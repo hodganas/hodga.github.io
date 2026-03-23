@@ -4,21 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>3D Модель Кружка</title>
+    <!-- Подключаем библиотеку Google Model Viewer -->
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            font-family: Arial, sans-serif;
         }
         
         model-viewer {
             width: 100vw;
             height: 100vh;
             background-color: #f5f5f5;
-            transition: filter 0.3s ease;
         }
         
+        /* Информационная панель внизу экрана */
         #status {
             position: fixed;
             bottom: 20px;
@@ -31,46 +31,24 @@
             font-family: monospace;
             font-size: 14px;
             z-index: 1000;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-            pointer-events: none;
             text-align: center;
         }
         
-        .controls {
+        /* Панель управления анимациями вверху экрана */
+        .animation-controls {
             position: fixed;
-            bottom: 90px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
             gap: 10px;
             z-index: 1000;
             background: rgba(0,0,0,0.8);
-            padding: 15px 25px;
+            padding: 10px 20px;
             border-radius: 50px;
-            backdrop-filter: blur(10px);
-            flex-wrap: wrap;
-            justify-content: center;
         }
         
-        .controls div {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .controls label {
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        
-        .controls input {
-            cursor: pointer;
-            width: 18px;
-            height: 18px;
-        }
-        
+        /* Стили кнопок */
         button {
             padding: 8px 16px;
             font-size: 14px;
@@ -79,7 +57,6 @@
             border-radius: 40px;
             cursor: pointer;
             transition: all 0.2s;
-            margin: 0 5px;
         }
         
         button:active {
@@ -96,52 +73,25 @@
             color: white;
         }
         
-        .btn-stop {
-            background: #f44336;
-            color: white;
-        }
-        
-        .animation-controls {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 10px;
-            z-index: 1000;
-            background: rgba(0,0,0,0.8);
-            padding: 10px 20px;
-            border-radius: 50px;
-            backdrop-filter: blur(10px);
-        }
-        
+        /* Активная кнопка подсвечивается */
         button.active {
             box-shadow: 0 0 0 2px white, 0 0 0 4px #ff5500;
-        }
-        
-        /* Эффект контура */
-        model-viewer.outline-effect {
-            filter: drop-shadow(0 0 3px red) drop-shadow(0 0 3px red) drop-shadow(0 0 3px red);
-        }
-        
-        /* Эффект пикселизации */
-        model-viewer.pixel-effect {
-            image-rendering: crisp-edges;
-            image-rendering: pixelated;
         }
     </style>
 </head>
 <body>
+    <!-- Панель статуса -->
     <div id="status">
         Загрузка модели CUP.glb...
     </div>
     
+    <!-- Панель управления анимациями -->
     <div class="animation-controls">
         <button id="btnZ" class="btn-z">Анимация Z</button>
         <button id="btnX" class="btn-x">Анимация X</button>
-        <button id="btnStop" class="btn-stop">Стоп</button>
     </div>
 
+    <!-- 3D модель с атрибутами -->
     <model-viewer 
         id="mv"
         src="CUP.glb"
@@ -156,99 +106,61 @@
         max-camera-orbit="auto auto 10m"
         style="background-color: #f5f5f5;">
     </model-viewer>
-    
-    <div class="controls">
-        <div>
-            <input type="checkbox" id="outlineCheck">
-            <label for="outlineCheck">Контур</label>
-        </div>
-        <div>
-            <input type="checkbox" id="pixelateCheck">
-            <label for="pixelateCheck">Пикселизация</label>
-        </div>
-    </div>
 
     <script>
         (() => {
+            // Получаем элементы со страницы
             const mv = document.getElementById('mv');
             const status = document.getElementById('status');
             const btnZ = document.getElementById('btnZ');
             const btnX = document.getElementById('btnX');
-            const btnStop = document.getElementById('btnStop');
-            const outlineCheck = document.getElementById('outlineCheck');
-            const pixelateCheck = document.getElementById('pixelateCheck');
             
-            let animations = [];
+            let animations = []; // Массив для хранения доступных анимаций
             
+            // Функция обновления текста в панели статуса
             function updateStatus(message, isError = false) {
                 status.textContent = message;
                 status.style.background = isError ? 'rgba(255,0,0,0.9)' : 'rgba(0,0,0,0.85)';
                 console.log(message);
             }
             
+            // Функция подсветки активной кнопки
             function updateActiveButton(animName) {
                 if (animName === 'z') {
                     btnZ.classList.add('active');
                     btnX.classList.remove('active');
-                    btnStop.classList.remove('active');
                 } else if (animName === 'x') {
                     btnX.classList.add('active');
                     btnZ.classList.remove('active');
-                    btnStop.classList.remove('active');
-                } else if (animName === null || animName === '') {
-                    btnStop.classList.add('active');
-                    btnZ.classList.remove('active');
-                    btnX.classList.remove('active');
                 }
             }
             
-            function stopAnimation() {
-                mv.animationName = null;
-                updateActiveButton(null);
-                updateStatus('Анимация остановлена');
-            }
-            
-            // Эффект контура
-            outlineCheck.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    mv.classList.add('outline-effect');
-                    updateStatus('Контур включен');
-                } else {
-                    mv.classList.remove('outline-effect');
-                    updateStatus('Контур выключен');
-                }
-            });
-            
-            // Эффект пикселизации
-            pixelateCheck.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    mv.classList.add('pixel-effect');
-                    updateStatus('Пикселизация включена');
-                } else {
-                    mv.classList.remove('pixel-effect');
-                    updateStatus('Пикселизация выключена');
-                }
-            });
-            
+            // Событие загрузки модели
             mv.addEventListener('load', () => {
                 updateStatus('Модель CUP.glb загружена');
                 
                 try {
+                    // Получаем список доступных анимаций из модели
                     animations = mv.availableAnimations || [];
                     console.log('Доступные анимации:', animations);
                     
                     if (animations.length > 0) {
                         updateStatus(`Найдено анимаций: ${animations.length} (${animations.join(', ')})`);
                         
+                        // Проверяем наличие анимации z
                         if (animations.includes('z')) {
                             mv.animationName = 'z';
                             updateActiveButton('z');
                             updateStatus('Запущена анимация: Z');
-                        } else if (animations.includes('x')) {
+                        } 
+                        // Проверяем наличие анимации x
+                        else if (animations.includes('x')) {
                             mv.animationName = 'x';
                             updateActiveButton('x');
                             updateStatus('Запущена анимация: X');
-                        } else if (animations.length > 0) {
+                        } 
+                        // Если нет z и x, запускаем первую доступную
+                        else if (animations.length > 0) {
                             mv.animationName = animations[0];
                             updateStatus(`Запущена анимация: ${animations[0]}`);
                         }
@@ -261,25 +173,24 @@
                 }
             });
             
+            // Событие ошибки загрузки модели
             mv.addEventListener('error', (error) => {
                 console.error('Ошибка загрузки:', error);
                 updateStatus('Файл CUP.glb не найден! Проверьте, что файл лежит в той же папке', true);
             });
             
+            // Кнопка анимации Z
             btnZ.addEventListener('click', () => {
                 mv.animationName = 'z';
                 updateActiveButton('z');
                 updateStatus('Анимация: Z');
             });
             
+            // Кнопка анимации X
             btnX.addEventListener('click', () => {
                 mv.animationName = 'x';
                 updateActiveButton('x');
                 updateStatus('Анимация: X');
-            });
-            
-            btnStop.addEventListener('click', () => {
-                stopAnimation();
             });
             
             console.log('Модель: CUP.glb');
