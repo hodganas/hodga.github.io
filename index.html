@@ -19,33 +19,52 @@
             width: 100vw;
             height: 100vh;
             background-color: #f5f5f5;
-            transition: all 0.2s ease;
         }
         
-        /* Усиленный эффект контура - яркое красное свечение */
+        /* Эффект контура для модели через outline (обводка самого элемента) */
         model-viewer.outline {
-            filter: drop-shadow(0 0 5px red) 
-                    drop-shadow(0 0 10px red) 
-                    drop-shadow(0 0 15px red)
-                    drop-shadow(0 0 20px rgba(255,0,0,0.5));
+            outline: none;
+            position: relative;
         }
         
-        /* Усиленный эффект пикселизации - крупные пиксели */
+        model-viewer.outline::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            box-shadow: inset 0 0 0 4px rgba(255, 0, 0, 0.8),
+                        inset 0 0 0 8px rgba(255, 0, 0, 0.5),
+                        inset 0 0 0 12px rgba(255, 0, 0, 0.3);
+            z-index: 10;
+        }
+        
+        /* Альтернативный контур через border на canvas */
+        model-viewer.outline canvas {
+            outline: 4px solid red;
+            outline-offset: 2px;
+        }
+        
+        /* Эффект пикселизации для модели через canvas */
         model-viewer.pixel {
+            filter: none;
+        }
+        
+        model-viewer.pixel canvas {
             image-rendering: crisp-edges;
             image-rendering: pixelated;
             image-rendering: optimizeSpeed;
-            transform: scale(0.98);
-            filter: contrast(1.2) saturate(1.1);
+            filter: contrast(1.5) brightness(1.1);
         }
         
-        /* Комбо эффект - контур + пикселизация */
-        model-viewer.outline.pixel {
-            filter: drop-shadow(0 0 5px red) 
-                    drop-shadow(0 0 10px red) 
-                    drop-shadow(0 0 15px red)
-                    contrast(1.2) 
-                    saturate(1.1);
+        /* Комбо эффект */
+        model-viewer.outline.pixel canvas {
+            outline: 4px solid red;
+            outline-offset: 2px;
+            image-rendering: pixelated;
+            filter: contrast(1.5) brightness(1.1);
         }
         
         #controls {
@@ -95,13 +114,6 @@
         
         .effect-btn.active {
             background: #ff5500;
-            animation: pulse 1s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255,85,0,0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(255,85,0,0); }
-            100% { box-shadow: 0 0 0 0 rgba(255,85,0,0); }
         }
     </style>
 </head>
@@ -109,8 +121,8 @@
     <div id="controls">
         <button id="btnZ">Анимация Z</button>
         <button id="btnX">Анимация X</button>
-        <button id="outlineBtn" class="effect-btn">🔴 Контур</button>
-        <button id="pixelBtn" class="effect-btn">📺 Пикселизация</button>
+        <button id="outlineBtn" class="effect-btn">🔴 Контур модели</button>
+        <button id="pixelBtn" class="effect-btn">📺 Пикселизация модели</button>
     </div>
 
     <model-viewer
@@ -136,34 +148,58 @@
         let outlineActive = false;
         let pixelActive = false;
         
-        // Контур (усиленный)
+        // Функция для применения эффектов к canvas модели
+        function applyEffects() {
+            const canvas = mv.querySelector('canvas');
+            if (!canvas) return;
+            
+            if (outlineActive && pixelActive) {
+                canvas.style.outline = '4px solid red';
+                canvas.style.outlineOffset = '2px';
+                canvas.style.imageRendering = 'pixelated';
+                canvas.style.filter = 'contrast(1.5) brightness(1.1)';
+            } else if (outlineActive) {
+                canvas.style.outline = '4px solid red';
+                canvas.style.outlineOffset = '2px';
+                canvas.style.imageRendering = 'auto';
+                canvas.style.filter = 'none';
+            } else if (pixelActive) {
+                canvas.style.outline = 'none';
+                canvas.style.imageRendering = 'pixelated';
+                canvas.style.filter = 'contrast(1.5) brightness(1.1)';
+            } else {
+                canvas.style.outline = 'none';
+                canvas.style.imageRendering = 'auto';
+                canvas.style.filter = 'none';
+            }
+        }
+        
+        // Контур модели
         outlineBtn.onclick = () => {
             if (outlineActive) {
-                mv.classList.remove('outline');
-                outlineBtn.classList.remove('active');
                 outlineActive = false;
-                console.log('Контур выключен');
+                outlineBtn.classList.remove('active');
+                console.log('Контур модели выключен');
             } else {
-                mv.classList.add('outline');
-                outlineBtn.classList.add('active');
                 outlineActive = true;
-                console.log('Контур включен (усиленный)');
+                outlineBtn.classList.add('active');
+                console.log('Контур модели включен');
             }
+            applyEffects();
         };
         
-        // Пикселизация (усиленная)
+        // Пикселизация модели
         pixelBtn.onclick = () => {
             if (pixelActive) {
-                mv.classList.remove('pixel');
-                pixelBtn.classList.remove('active');
                 pixelActive = false;
-                console.log('Пикселизация выключена');
+                pixelBtn.classList.remove('active');
+                console.log('Пикселизация модели выключена');
             } else {
-                mv.classList.add('pixel');
-                pixelBtn.classList.add('active');
                 pixelActive = true;
-                console.log('Пикселизация включена (усиленная)');
+                pixelBtn.classList.add('active');
+                console.log('Пикселизация модели включена');
             }
+            applyEffects();
         };
         
         // Анимации
@@ -181,6 +217,17 @@
             console.log('Анимация X');
         };
         
+        // Следим за появлением canvas и применяем эффекты
+        const observer = new MutationObserver(() => {
+            const canvas = mv.querySelector('canvas');
+            if (canvas) {
+                applyEffects();
+                observer.disconnect();
+            }
+        });
+        
+        observer.observe(mv, { childList: true, subtree: true });
+        
         // Проверка загрузки модели
         mv.addEventListener('load', () => {
             console.log('Модель загружена');
@@ -196,6 +243,9 @@
                 if (animations[0] === 'z') btnZ.classList.add('active');
                 else if (animations[0] === 'x') btnX.classList.add('active');
             }
+            
+            // Применяем эффекты к canvas
+            setTimeout(() => applyEffects(), 100);
         });
         
         mv.addEventListener('error', () => {
