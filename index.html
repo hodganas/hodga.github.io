@@ -4,15 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>3D Модель Кружка</title>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
-            }
-        }
-    </script>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer-module.min.js"></script>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer-effects/dist/model-viewer-effects.min.js"></script>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -130,10 +122,6 @@
         min-camera-orbit="auto auto 2m"
         max-camera-orbit="auto auto 10m"
         style="background-color: #f5f5f5;">
-        <effect-composer id="composer">
-            <outline-effect id="outlineEffect" color="red" blend-mode="skip"></outline-effect>
-            <pixelate-effect id="pixelEffect" granularity="15" blend-mode="skip"></pixelate-effect>
-        </effect-composer>
     </model-viewer>
 
     <script>
@@ -145,9 +133,6 @@
             const btnStop = document.getElementById('btnStop');
             const btnOutline = document.getElementById('btnOutline');
             const btnPixel = document.getElementById('btnPixel');
-            
-            const outlineEffect = document.getElementById('outlineEffect');
-            const pixelEffect = document.getElementById('pixelEffect');
             
             let animations = [];
             let isOutlineActive = false;
@@ -175,36 +160,33 @@
                 }
             }
             
+            // Эффект контура через CSS фильтр
             function toggleOutline() {
-                if (outlineEffect) {
-                    if (isOutlineActive) {
-                        outlineEffect.setAttribute('blend-mode', 'skip');
-                        isOutlineActive = false;
-                        btnOutline.classList.remove('active');
-                        updateStatus('Контур выключен');
-                    } else {
-                        outlineEffect.setAttribute('blend-mode', 'default');
-                        isOutlineActive = true;
-                        btnOutline.classList.add('active');
-                        updateStatus('Контур включен');
-                    }
+                if (isOutlineActive) {
+                    mv.style.filter = 'none';
+                    isOutlineActive = false;
+                    btnOutline.classList.remove('active');
+                    updateStatus('Контур выключен');
+                } else {
+                    mv.style.filter = 'drop-shadow(0 0 2px red) drop-shadow(0 0 2px red) drop-shadow(0 0 2px red)';
+                    isOutlineActive = true;
+                    btnOutline.classList.add('active');
+                    updateStatus('Контур включен');
                 }
             }
             
+            // Эффект пикселизации через CSS
             function togglePixel() {
-                if (pixelEffect) {
-                    if (isPixelActive) {
-                        pixelEffect.setAttribute('blend-mode', 'skip');
-                        isPixelActive = false;
-                        btnPixel.classList.remove('active');
-                        updateStatus('Пикселизация выключена');
-                    } else {
-                        pixelEffect.setAttribute('blend-mode', 'default');
-                        pixelEffect.setAttribute('granularity', '15');
-                        isPixelActive = true;
-                        btnPixel.classList.add('active');
-                        updateStatus('Пикселизация включена');
-                    }
+                if (isPixelActive) {
+                    mv.style.imageRendering = 'auto';
+                    isPixelActive = false;
+                    btnPixel.classList.remove('active');
+                    updateStatus('Пикселизация выключена');
+                } else {
+                    mv.style.imageRendering = 'pixelated';
+                    isPixelActive = true;
+                    btnPixel.classList.add('active');
+                    updateStatus('Пикселизация включена');
                 }
             }
             
