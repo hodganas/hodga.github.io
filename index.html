@@ -5,19 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>3D Модель Кружка</title>
     
-    <!-- Поддержка import maps для Safari -->
-    <script async src="https://ga.jspm.io/npm:es-module-shims@1.7.1/dist/es-module-shims.js"></script>
-    
-    <!-- Import map для Three.js - нужна совместимая версия -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
-            }
-        }
-    </script>
-    
-    <!-- model-viewer 3.5.0 с Google CDN (эффекты уже внутри) -->
+    <!-- Подключаем model-viewer -->
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
     
     <style>
@@ -31,6 +19,18 @@
             width: 100vw;
             height: 100vh;
             background-color: #f5f5f5;
+            transition: all 0.2s ease;
+        }
+        
+        /* Эффект контура через фильтр */
+        model-viewer.outline {
+            filter: drop-shadow(0 0 3px red) drop-shadow(0 0 3px red);
+        }
+        
+        /* Эффект пикселизации */
+        model-viewer.pixel {
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
         }
         
         #controls {
@@ -94,73 +94,46 @@
         camera-controls
         autoplay
         animation-name="z"
-        animation-crossfade-duration="300"
         shadow-intensity="1"
         exposure="1"
-        camera-orbit="0deg 75deg 5m"
         style="background-color: #f5f5f5;">
-        
-        <effect-composer>
-            <outline-effect id="outlineEffect" color="red" blend-mode="skip"></outline-effect>
-            <pixelate-effect id="pixelEffect" granularity="15" blend-mode="skip"></pixelate-effect>
-        </effect-composer>
     </model-viewer>
 
-    <script type="module">
-        // Ждем загрузки model-viewer
-        await customElements.whenDefined('model-viewer');
-        
+    <script>
+        // Получаем элементы
         const mv = document.getElementById('mv');
         const btnZ = document.getElementById('btnZ');
         const btnX = document.getElementById('btnX');
         const outlineBtn = document.getElementById('outlineBtn');
         const pixelBtn = document.getElementById('pixelBtn');
         
-        let isOutlineActive = false;
-        let isPixelActive = false;
+        // Состояния эффектов
+        let outlineActive = false;
+        let pixelActive = false;
         
-        // Получаем эффекты после загрузки модели
-        mv.addEventListener('load', () => {
-            console.log('Модель загружена');
-            console.log('Доступные анимации:', mv.availableAnimations);
-            
-            // Активируем кнопку Z если анимация есть
-            if (mv.availableAnimations?.includes('z')) {
-                btnZ.classList.add('active');
-            }
-        });
-        
-        mv.addEventListener('error', () => {
-            console.error('Ошибка: файл CUP.glb не найден');
-        });
-        
-        // Эффекты - получаем их из model-viewer
-        const outlineEffect = document.getElementById('outlineEffect');
-        const pixelEffect = document.getElementById('pixelEffect');
-        
-        // Переключение контура
+        // Контур
         outlineBtn.onclick = () => {
-            if (isOutlineActive) {
-                if (outlineEffect) outlineEffect.blendMode = 'skip';
-                isOutlineActive = false;
+            if (outlineActive) {
+                mv.classList.remove('outline');
                 outlineBtn.classList.remove('active');
+                outlineActive = false;
             } else {
-                if (outlineEffect) outlineEffect.blendMode = 'default';
-                isOutlineActive = true;
+                mv.classList.add('outline');
                 outlineBtn.classList.add('active');
+                outlineActive = true;
             }
         };
         
-        // Переключение пикселизации
+        // Пикселизация
         pixelBtn.onclick = () => {
-            if (isPixelActive) {
-                if (pixelEffect) pixelEffect.blendMode = 'skip';
-                isPixelActive = false;
+            if (pixelActive) {
+                mv.classList.remove('pixel');
                 pixelBtn.classList.remove('active');
+                pixelActive = false;
             } else {
-                if (pixelEffect) pixelEffect.blendMode = 'default';
-                isPixelActive = true;
+                mv.classList.add('pixel');
                 pixelBtn.classList.add('active');
+                pixelActive = true;
             }
         };
         
@@ -169,13 +142,37 @@
             mv.animationName = 'z';
             btnZ.classList.add('active');
             btnX.classList.remove('active');
+            console.log('Анимация Z');
         };
         
         btnX.onclick = () => {
             mv.animationName = 'x';
             btnX.classList.add('active');
             btnZ.classList.remove('active');
+            console.log('Анимация X');
         };
+        
+        // Проверка загрузки модели
+        mv.addEventListener('load', () => {
+            console.log('Модель загружена');
+            console.log('Доступные анимации:', mv.availableAnimations);
+            
+            // Если есть анимация z - активируем кнопку
+            const animations = mv.availableAnimations || [];
+            if (animations.includes('z')) {
+                btnZ.classList.add('active');
+            } else if (animations.includes('x')) {
+                btnX.classList.add('active');
+            } else if (animations.length > 0) {
+                mv.animationName = animations[0];
+                if (animations[0] === 'z') btnZ.classList.add('active');
+                else if (animations[0] === 'x') btnX.classList.add('active');
+            }
+        });
+        
+        mv.addEventListener('error', () => {
+            console.error('Ошибка: файл CUP.glb не найден!');
+        });
     </script>
 </body>
 </html>
