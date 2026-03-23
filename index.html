@@ -16,6 +16,7 @@
             width: 100vw;
             height: 100vh;
             background-color: #f5f5f5;
+            transition: filter 0.3s ease;
         }
         
         #status {
@@ -117,6 +118,17 @@
         button.active {
             box-shadow: 0 0 0 2px white, 0 0 0 4px #ff5500;
         }
+        
+        /* Эффект контура */
+        model-viewer.outline-effect {
+            filter: drop-shadow(0 0 3px red) drop-shadow(0 0 3px red) drop-shadow(0 0 3px red);
+        }
+        
+        /* Эффект пикселизации */
+        model-viewer.pixel-effect {
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+        }
     </style>
 </head>
 <body>
@@ -143,23 +155,18 @@
         min-camera-orbit="auto auto 2m"
         max-camera-orbit="auto auto 10m"
         style="background-color: #f5f5f5;">
-        
-        <effect-composer render-mode="quality">
-            <outline-effect id="outlineEffect" color="red" blend-mode="skip"></outline-effect>
-            <pixelate-effect id="pixelateEffect" granularity="15" blend-mode="skip"></pixelate-effect>
-        </effect-composer>
-        
-        <div class="controls">
-            <div>
-                <input type="checkbox" id="outlineCheck">
-                <label for="outlineCheck">Контур</label>
-            </div>
-            <div>
-                <input type="checkbox" id="pixelateCheck">
-                <label for="pixelateCheck">Пикселизация</label>
-            </div>
-        </div>
     </model-viewer>
+    
+    <div class="controls">
+        <div>
+            <input type="checkbox" id="outlineCheck">
+            <label for="outlineCheck">Контур</label>
+        </div>
+        <div>
+            <input type="checkbox" id="pixelateCheck">
+            <label for="pixelateCheck">Пикселизация</label>
+        </div>
+    </div>
 
     <script>
         (() => {
@@ -168,9 +175,6 @@
             const btnZ = document.getElementById('btnZ');
             const btnX = document.getElementById('btnX');
             const btnStop = document.getElementById('btnStop');
-            
-            const outlineEffect = document.getElementById('outlineEffect');
-            const pixelateEffect = document.getElementById('pixelateEffect');
             const outlineCheck = document.getElementById('outlineCheck');
             const pixelateCheck = document.getElementById('pixelateCheck');
             
@@ -204,15 +208,26 @@
                 updateStatus('Анимация остановлена');
             }
             
-            // Управление эффектами
+            // Эффект контура
             outlineCheck.addEventListener('change', (e) => {
-                outlineEffect.blendMode = e.target.checked ? 'default' : 'skip';
-                updateStatus(e.target.checked ? 'Контур включен' : 'Контур выключен');
+                if (e.target.checked) {
+                    mv.classList.add('outline-effect');
+                    updateStatus('Контур включен');
+                } else {
+                    mv.classList.remove('outline-effect');
+                    updateStatus('Контур выключен');
+                }
             });
             
+            // Эффект пикселизации
             pixelateCheck.addEventListener('change', (e) => {
-                pixelateEffect.blendMode = e.target.checked ? 'default' : 'skip';
-                updateStatus(e.target.checked ? 'Пикселизация включена' : 'Пикселизация выключена');
+                if (e.target.checked) {
+                    mv.classList.add('pixel-effect');
+                    updateStatus('Пикселизация включена');
+                } else {
+                    mv.classList.remove('pixel-effect');
+                    updateStatus('Пикселизация выключена');
+                }
             });
             
             mv.addEventListener('load', () => {
