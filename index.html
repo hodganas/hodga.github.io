@@ -10,7 +10,6 @@
             margin: 0;
             overflow: hidden;
             font-family: Arial, sans-serif;
-            position: relative;
         }
         
         model-viewer {
@@ -37,7 +36,7 @@
             text-align: center;
         }
         
-        #controls {
+        .controls {
             position: fixed;
             bottom: 90px;
             left: 50%;
@@ -46,21 +45,40 @@
             gap: 10px;
             z-index: 1000;
             background: rgba(0,0,0,0.8);
-            padding: 12px 20px;
+            padding: 15px 25px;
             border-radius: 50px;
             backdrop-filter: blur(10px);
             flex-wrap: wrap;
             justify-content: center;
         }
         
+        .controls div {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .controls label {
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .controls input {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+        
         button {
-            padding: 10px 20px;
+            padding: 8px 16px;
             font-size: 14px;
             font-weight: bold;
             border: none;
             border-radius: 40px;
             cursor: pointer;
             transition: all 0.2s;
+            margin: 0 5px;
         }
         
         button:active {
@@ -82,40 +100,22 @@
             color: white;
         }
         
-        .btn-outline {
-            background: #ff9800;
-            color: white;
-        }
-        
-        .btn-pixel {
-            background: #9c27b0;
-            color: white;
+        .animation-controls {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            padding: 10px 20px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
         }
         
         button.active {
             box-shadow: 0 0 0 2px white, 0 0 0 4px #ff5500;
-        }
-        
-        /* Слой для пикселизации */
-        .pixel-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 999;
-            display: none;
-        }
-        
-        .pixel-overlay.active {
-            display: block;
-        }
-        
-        .pixel-canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
         }
     </style>
 </head>
@@ -124,16 +124,10 @@
         Загрузка модели CUP.glb...
     </div>
     
-    <div id="controls">
+    <div class="animation-controls">
         <button id="btnZ" class="btn-z">Анимация Z</button>
         <button id="btnX" class="btn-x">Анимация X</button>
         <button id="btnStop" class="btn-stop">Стоп</button>
-        <button id="btnOutline" class="btn-outline">Контур</button>
-        <button id="btnPixel" class="btn-pixel">Пикселизация</button>
-    </div>
-    
-    <div class="pixel-overlay" id="pixelOverlay">
-        <canvas id="pixelCanvas" class="pixel-canvas"></canvas>
     </div>
 
     <model-viewer 
@@ -149,6 +143,22 @@
         min-camera-orbit="auto auto 2m"
         max-camera-orbit="auto auto 10m"
         style="background-color: #f5f5f5;">
+        
+        <effect-composer render-mode="quality">
+            <outline-effect id="outlineEffect" color="red" blend-mode="skip"></outline-effect>
+            <pixelate-effect id="pixelateEffect" granularity="15" blend-mode="skip"></pixelate-effect>
+        </effect-composer>
+        
+        <div class="controls">
+            <div>
+                <input type="checkbox" id="outlineCheck">
+                <label for="outlineCheck">Контур</label>
+            </div>
+            <div>
+                <input type="checkbox" id="pixelateCheck">
+                <label for="pixelateCheck">Пикселизация</label>
+            </div>
+        </div>
     </model-viewer>
 
     <script>
@@ -158,15 +168,13 @@
             const btnZ = document.getElementById('btnZ');
             const btnX = document.getElementById('btnX');
             const btnStop = document.getElementById('btnStop');
-            const btnOutline = document.getElementById('btnOutline');
-            const btnPixel = document.getElementById('btnPixel');
-            const pixelOverlay = document.getElementById('pixelOverlay');
-            const pixelCanvas = document.getElementById('pixelCanvas');
+            
+            const outlineEffect = document.getElementById('outlineEffect');
+            const pixelateEffect = document.getElementById('pixelateEffect');
+            const outlineCheck = document.getElementById('outlineCheck');
+            const pixelateCheck = document.getElementById('pixelateCheck');
             
             let animations = [];
-            let isOutlineActive = false;
-            let isPixelActive = false;
-            let pixelInterval = null;
             
             function updateStatus(message, isError = false) {
                 status.textContent = message;
@@ -190,110 +198,22 @@
                 }
             }
             
-            // Эффект контура через CSS фильтр
-            function toggleOutline() {
-                if (isOutlineActive) {
-                    mv.style.filter = 'none';
-                    isOutlineActive = false;
-                    btnOutline.classList.remove('active');
-                    updateStatus('Контур выключен');
-                } else {
-                    mv.style.filter = 'drop-shadow(0 0 2px red) drop-shadow(0 0 2px red) drop-shadow(0 0 2px red)';
-                    isOutlineActive = true;
-                    btnOutline.classList.add('active');
-                    updateStatus('Контур включен');
-                }
-            }
-            
-            // Настоящая пикселизация через canvas
-            function applyPixelation(ctx, width, height, pixelSize) {
-                const imageData = ctx.getImageData(0, 0, width, height);
-                const data = imageData.data;
-                
-                // Уменьшаем размер
-                const tempCanvas = document.createElement('canvas');
-                const tempCtx = tempCanvas.getContext('2d');
-                const smallWidth = Math.floor(width / pixelSize);
-                const smallHeight = Math.floor(height / pixelSize);
-                
-                tempCanvas.width = smallWidth;
-                tempCanvas.height = smallHeight;
-                tempCtx.drawImage(pixelCanvas, 0, 0, smallWidth, smallHeight);
-                
-                // Увеличиваем обратно с пиксельным эффектом
-                ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(tempCanvas, 0, 0, width, height);
-            }
-            
-            function startPixelation() {
-                if (pixelInterval) clearInterval(pixelInterval);
-                
-                pixelOverlay.classList.add('active');
-                
-                const captureAndPixelate = () => {
-                    try {
-                        // Получаем область model-viewer
-                        const rect = mv.getBoundingClientRect();
-                        pixelCanvas.width = rect.width;
-                        pixelCanvas.height = rect.height;
-                        pixelCanvas.style.width = rect.width + 'px';
-                        pixelCanvas.style.height = rect.height + 'px';
-                        
-                        // Рисуем снимок model-viewer
-                        const ctx = pixelCanvas.getContext('2d');
-                        ctx.drawImage(mv, 0, 0, rect.width, rect.height);
-                        
-                        // Применяем пикселизацию (размер пикселя 8px)
-                        const imageData = ctx.getImageData(0, 0, rect.width, rect.height);
-                        const pixelSize = 12;
-                        
-                        const tempCanvas = document.createElement('canvas');
-                        const tempCtx = tempCanvas.getContext('2d');
-                        const smallWidth = Math.floor(rect.width / pixelSize);
-                        const smallHeight = Math.floor(rect.height / pixelSize);
-                        
-                        tempCanvas.width = smallWidth;
-                        tempCanvas.height = smallHeight;
-                        tempCtx.drawImage(pixelCanvas, 0, 0, smallWidth, smallHeight);
-                        
-                        ctx.imageSmoothingEnabled = false;
-                        ctx.drawImage(tempCanvas, 0, 0, rect.width, rect.height);
-                    } catch(e) {
-                        console.log('Ошибка пикселизации:', e);
-                    }
-                };
-                
-                captureAndPixelate();
-                pixelInterval = setInterval(captureAndPixelate, 100);
-            }
-            
-            function stopPixelation() {
-                if (pixelInterval) {
-                    clearInterval(pixelInterval);
-                    pixelInterval = null;
-                }
-                pixelOverlay.classList.remove('active');
-            }
-            
-            function togglePixel() {
-                if (isPixelActive) {
-                    stopPixelation();
-                    isPixelActive = false;
-                    btnPixel.classList.remove('active');
-                    updateStatus('Пикселизация выключена');
-                } else {
-                    startPixelation();
-                    isPixelActive = true;
-                    btnPixel.classList.add('active');
-                    updateStatus('Пикселизация включена (размер пикселя 12px)');
-                }
-            }
-            
             function stopAnimation() {
                 mv.animationName = null;
                 updateActiveButton(null);
                 updateStatus('Анимация остановлена');
             }
+            
+            // Управление эффектами
+            outlineCheck.addEventListener('change', (e) => {
+                outlineEffect.blendMode = e.target.checked ? 'default' : 'skip';
+                updateStatus(e.target.checked ? 'Контур включен' : 'Контур выключен');
+            });
+            
+            pixelateCheck.addEventListener('change', (e) => {
+                pixelateEffect.blendMode = e.target.checked ? 'default' : 'skip';
+                updateStatus(e.target.checked ? 'Пикселизация включена' : 'Пикселизация выключена');
+            });
             
             mv.addEventListener('load', () => {
                 updateStatus('Модель CUP.glb загружена');
@@ -345,14 +265,6 @@
             
             btnStop.addEventListener('click', () => {
                 stopAnimation();
-            });
-            
-            btnOutline.addEventListener('click', () => {
-                toggleOutline();
-            });
-            
-            btnPixel.addEventListener('click', () => {
-                togglePixel();
             });
             
             console.log('Модель: CUP.glb');
