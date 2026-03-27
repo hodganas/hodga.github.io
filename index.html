@@ -257,9 +257,7 @@
       },
       pixelOff: () => pixelEffect?.setAttribute('blend-mode', 'skip'),
       setPixelSize: (size) => pixelEffect?.setAttribute('granularity', size),
-      listAnimations: () => console.log('Animations:', animations),
-      playAnimZ: () => { mv.animationName = 'z'; },
-      playAnimX: () => { mv.animationName = 'x'; }
+      listAnimations: () => console.log('Animations:', animations)
     };
     
     console.log('✨ Debug commands available in window.debug');
